@@ -78,7 +78,7 @@ function App() {
         context.strokeStyle = "red";
         context.fillStyle = "red";
         context.stroke();
-    
+
         // Display class name with confidence score
         const confidence = (prediction.score * 100).toFixed(2); // Convert to percentage
         const text = `${prediction.class} with ${confidence}% confidence`;
@@ -95,7 +95,6 @@ function App() {
     socket.on("resourceUsage", (usage) => {
       setResourceUsage(usage);
     });
-
   }, []);
 
   return (
@@ -132,7 +131,9 @@ function App() {
         <p>Free: {resourceUsage.memory.free}</p>
         <h4>CPU Usage:</h4>
         {resourceUsage.cpu.map((cpu, index) => (
-          <p key={index}>Core {cpu.core}: {cpu.usage}</p>
+          <p key={index}>
+            Core {cpu.core}: {cpu.usage}
+          </p>
         ))}
       </div>
     </div>

@@ -1,38 +1,40 @@
-const fs = require('fs');
-const path = require('path');
-const jpeg = require('jpeg-js');
+const fs = require("fs");
+const path = require("path");
+const jpeg = require("jpeg-js");
 const express = require("express");
 const pureimage = require("pureimage");
 const compression = require("compression");
 const http = require("http");
 const socketIo = require("socket.io");
-const nodeFetch = require('node-fetch');
-const cors = require('cors');
+const nodeFetch = require("node-fetch");
+const cors = require("cors");
 
 global.fetch = nodeFetch;
 
-require('@tensorflow/tfjs-backend-cpu');
-require('@tensorflow/tfjs-backend-webgl');
-const tf = require('@tensorflow/tfjs-node');
-const cocoSsd = require('@tensorflow-models/coco-ssd');
-const { getSystemUsage } = require('./systemUsage');
+require("@tensorflow/tfjs-backend-cpu");
+require("@tensorflow/tfjs-backend-webgl");
+const tf = require("@tensorflow/tfjs-node");
+const cocoSsd = require("@tensorflow-models/coco-ssd");
+const { getSystemUsage } = require("./systemUsage");
 
 const app = express();
 const server = http.createServer(app);
 
 const io = socketIo(server, {
   cors: {
-    origin: "http://localhost:3000", 
+    origin: "http://localhost:3000",
     methods: ["GET", "POST"],
     allowedHeaders: ["my-custom-header"],
     credentials: true,
   },
 });
 
-app.use(cors({
-  origin: "http://localhost:3000",
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  })
+);
 
 app.use(compression());
 
@@ -47,8 +49,11 @@ let model;
  * @async
  */
 async function loadFont() {
-    const font = pureimage.registerFont(path.join(__dirname, 'SourceSansPro-Regular.ttf'), 'Source Sans Pro');
-    await font.load();
+  const font = pureimage.registerFont(
+    path.join(__dirname, "SourceSansPro-Regular.ttf"),
+    "Source Sans Pro"
+  );
+  await font.load();
 }
 loadFont();
 
@@ -57,12 +62,11 @@ loadFont();
  * @async
  */
 async function loadModel() {
-    model = await cocoSsd.load();
-    console.log('Model ready');
+  model = await cocoSsd.load();
+  console.log("Model ready");
 }
-console.log('Loading model...');
+console.log("Loading model...");
 loadModel();
-
 
 /**
  * Process image and get detections.
@@ -70,20 +74,20 @@ loadModel();
  * @returns {Promise<object[]>} The detections object.
  */
 async function reco(imageBuffer) {
-    const img = tf.node.decodeImage(imageBuffer);
-    const detections = await model.detect(img, maxDetections, scoreThreshold);
-    // console.log(detections);
-    tf.dispose(img);
+  const img = tf.node.decodeImage(imageBuffer);
+  const detections = await model.detect(img, maxDetections, scoreThreshold);
+  // console.log(detections);
+  tf.dispose(img);
 
-    const predictionsWithAccuracy = detections.map(detection => {
-        return {
-            class: detection.class, // Detected class (e.g., 'person', 'cat', etc.)
-            bbox: detection.bbox,   // Bounding box coordinates [x, y, width, height]
-            score: detection.score  // Confidence score (accuracy)
-        };
-    });
+  const predictionsWithAccuracy = detections.map((detection) => {
+    return {
+      class: detection.class, // Detected class (e.g., 'person', 'cat', etc.)
+      bbox: detection.bbox, // Bounding box coordinates [x, y, width, height]
+      score: detection.score, // Confidence score (accuracy)
+    };
+  });
 
-    return predictionsWithAccuracy;
+  return predictionsWithAccuracy;
 }
 
 /**
@@ -91,38 +95,38 @@ async function reco(imageBuffer) {
  * @event connection
  * @param {Socket} socket - The Socket.IO socket instance.
  */
-io.on('connection', (socket) => {
-    console.log('New client connected');
+io.on("connection", (socket) => {
+  console.log("New client connected");
 
-    const intervalId = setInterval(async () => {
-        const usage = await getSystemUsage();
-        socket.emit('resourceUsage', usage);
-    }, 2000);
+  const intervalId = setInterval(async () => {
+    const usage = await getSystemUsage();
+    socket.emit("resourceUsage", usage);
+  }, 2000);
 
-    /**
-     * Event for receiving image data.
-     * @event image
-     * @param {string} imageData - Base64 encoded image data.
-     */
-    socket.on('image', async (imageData) => {
-        const imageBuffer = Buffer.from(imageData, 'base64');
-        const predictions = await reco(imageBuffer);
+  /**
+   * Event for receiving image data.
+   * @event image
+   * @param {string} imageData - Base64 encoded image data.
+   */
+  socket.on("image", async (imageData) => {
+    const imageBuffer = Buffer.from(imageData, "base64");
+    const predictions = await reco(imageBuffer);
 
-        socket.emit('predictions', predictions);
-    });
+    socket.emit("predictions", predictions);
+  });
 
-    /**
-     * Event for client disconnection.
-     * @event disconnect
-     */
-    socket.on('disconnect', () => {
-        console.log('Client disconnected');
-    });
+  /**
+   * Event for client disconnection.
+   * @event disconnect
+   */
+  socket.on("disconnect", () => {
+    console.log("Client disconnected");
+  });
 });
 
 /**
  * Start the server and listen on the specified port.
  */
 server.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Server is running on http://localhost:${PORT}`);
 });
