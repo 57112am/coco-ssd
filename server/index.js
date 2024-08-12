@@ -22,7 +22,7 @@ const server = http.createServer(app);
 
 const io = socketIo(server, {
   cors: {
-    origin: "http://localhost:3006", 
+    origin: "http://localhost:3000", 
     methods: ["GET", "POST"],
     allowedHeaders: ["my-custom-header"],
     credentials: true,
@@ -30,7 +30,7 @@ const io = socketIo(server, {
 });
 
 app.use(cors({
-  origin: "http://localhost:3006",
+  origin: "http://localhost:3000",
   credentials: true,
 }));
 
